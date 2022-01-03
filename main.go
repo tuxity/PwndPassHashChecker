@@ -8,19 +8,29 @@ import (
     "time"
     "math"
     "io"
+    "flag"
 )
 
 func main() {
+    var inputFilePath string
+    var outputFilePath string
+    var hibpFilePath string
+
+    flag.StringVar(&inputFilePath, "input", "", "Specify input file containing hashed passwords")
+    flag.StringVar(&outputFilePath, "output", "", "Specify output file for leaked hashes")
+    flag.StringVar(&hibpFilePath, "hibp", "", "Specify Have I Been Pwned NTLM/SHA1 text file")
+
+    flag.Parse()
 
     startTimer := time.Now()
 
-    hibp, err := os.OpenFile("./pwned-passwords-sha1-ordered-by-hash-v8.txt", os.O_RDONLY, 0600)
+    hibp, err := os.OpenFile(hibpFilePath, os.O_RDONLY, 0600)
     if err != nil {
         fmt.Println(err)
         return
     }
 
-    hibpHashOnly, err := os.OpenFile("./pwned-passwords-sha1-ordered-by-hash-v8-hashonly.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+    hibpHashOnly, err := os.OpenFile("./temp_hashonly.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
     if err != nil {
         fmt.Println(err)
         return
@@ -42,14 +52,14 @@ func main() {
 
     fmt.Printf("file converted with only hash in %s\n", time.Since(startTimer))
 
-    hashs, err := os.Open("./hashs.txt")
+    hashs, err := os.Open(inputFilePath)
     if err != nil {
         fmt.Println(err)
         return
     }
     defer hashs.Close()
 
-    leaked, err := os.OpenFile("./leaked_hashs.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+    leaked, err := os.OpenFile(outputFilePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
     if err != nil {
         fmt.Println(err)
     }
