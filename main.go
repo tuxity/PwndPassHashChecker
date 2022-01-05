@@ -65,22 +65,23 @@ func main() {
     }
     defer leaked.Close()
 
-    const hashLength int64 = 40
-    hashBuffer := make([]byte, hashLength)
-
-    hashCount := 0
+    hashCount := 1
     hashLeakedCount := 0
+
+    hashsFileScanner := bufio.NewScanner(hashs)
+
+    // read first line to determine size and type of hash
+    hashsFileScanner.Scan()
+    hash := strings.ToUpper(hashsFileScanner.Text())
+
+    var hashLength int64 = int64(len(hash)) // 40 for SHA1 or 32 NTLM
+    hashBuffer := make([]byte, hashLength)
 
     hibpHashOnlyStat, _ := hibpHashOnly.Stat()
 
-    hashsFileScanner := bufio.NewScanner(hashs)
     for hashsFileScanner.Scan() {
-        hash := strings.ToUpper(hashsFileScanner.Text())
-
         var start int64 = 0
         var end int64 = hibpHashOnlyStat.Size()
-
-        hashCount++
 
         for {
             pos := start + ( int64(math.Floor(float64((end - start) / (hashLength + 1)) / 2 )) * (hashLength + 1) )
@@ -110,6 +111,9 @@ func main() {
                 end = pos
             }
         }
+
+        hash = strings.ToUpper(hashsFileScanner.Text())
+        hashCount++
     }
 
     fmt.Printf("%d password hashs analyzed in %s and %d leaked\n", hashCount, time.Since(startTimer), hashLeakedCount)
